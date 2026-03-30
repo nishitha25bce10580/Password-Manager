@@ -1,4 +1,4 @@
-# Password-Manager
+# Suraksha
 
 A **local, encrypted password manager** built with Python (Flask) + HTML/CSS.  
 All passwords are encrypted with AES-256 (Fernet) before being stored in SQLite.
