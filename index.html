@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rakshan — Password Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --surface: #111318;
+    --surface2: #191c24;
+    --border: #252830;
+    --border2: #2e323d;
+    --accent: #6ee7b7;
+    --accent2: #34d399;
+    --accent-dim: rgba(110,231,183,0.12);
+    --accent-glow: rgba(110,231,183,0.25);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251,191,36,0.12);
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --radius: 12px;
+    --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID NOISE TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 10% 10%, rgba(110,231,183,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 90% 90%, rgba(52,211,153,0.03) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── AUTH SCREEN ── */
+  #auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 0 0 1px rgba(110,231,183,0.05), 0 32px 64px rgba(0,0,0,0.5);
+    animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .brand-icon {
+    width: 44px; height: 44px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .brand-name {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .brand-name span { color: var(--accent); }
+
+  .auth-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+
+  .auth-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .auth-tab.active {
+    background: var(--accent);
+    color: #0a0b0f;
+  }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    transition: var(--transition);
+    outline: none;
+  }
+
+  .form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .form-input::placeholder { color: var(--text-muted); }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    letter-spacing: 0.3px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0b0f;
+  }
+
+  .btn-primary:hover {
+    background: var(--accent2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px var(--accent-glow);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .btn-danger:hover { background: rgba(248,113,113,0.2); }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    display: none;
+  }
+
+  .alert-error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .alert-success { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(110,231,183,0.2); }
+
+  /* ── MAIN APP ── */
+  #app-screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+
+  .app-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .sidebar-brand .icon { font-size: 22px; }
+  .sidebar-brand .name { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+  .sidebar-brand .name span { color: var(--accent); }
+
+  .sidebar-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding: 0 20px 8px;
+  }
+
+  .sidebar-nav { list-style: none; padding: 0 12px; margin-bottom: 24px; }
+
+  .sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .sidebar-nav li a:hover { background: var(--surface2); color: var(--text); }
+  .sidebar-nav li a.active { background: var(--accent-dim); color: var(--accent); }
+  .sidebar-nav li a .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-nav li a .nav-count {
+    margin-left: auto;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 12px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--surface2);
+    margin-bottom: 8px;
+  }
+
+  .user-avatar {
+    width: 30px; height: 30px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--accent);
+  }
+
+  .user-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .user-label { font-size: 10px; color: var(--text-muted); }
+
+  .logout-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .logout-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+  /* ── MAIN CONTENT ── */
+  .main-content { padding: 32px 36px; overflow-y: auto; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .page-subtitle { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+  /* ── STATS CARDS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    transition: var(--transition);
+  }
+
+  .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+  .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .search-wrap { position: relative; flex: 1; }
+
+  .search-input {
+    width: 100%;
+    padding: 11px 16px 11px 42px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: var(--transition);
+  }
+
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+  .search-icon {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 16px;
+  }
+
+  .filter-select {
+    padding: 11px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .add-btn {
+    padding: 11px 20px;
+    background: var(--accent);
+    color: #0a0b0f;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+
+  .add-btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+
+  /* ── PASSWORD CARDS ── */
+  .pw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+
+  .pw-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    transition: var(--transition);
+    cursor: default;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .pw-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+  .pw-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .pw-site-icon {
+    width: 36px; height: 36px;
+    background: var(--accent-dim);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .pw-site-info { margin-left: 12px; flex: 1; min-width: 0; }
+  .pw-site-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pw-site-url { font-size: 11px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .pw-category-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .pw-fields { margin-bottom: 12px; }
+
+  .pw-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pw-field:last-child { border-bottom: none; }
+
+  .pw-field-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; width: 64px; flex-shrink: 0; letter-spacing: 0.5px; }
+  .pw-field-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pw-password-value { filter: blur(4px); transition: var(--transition); user-select: none; }
+  .pw-password-value.revealed { filter: none; color: var(--accent); }
+
+  .copy-btn, .eye-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: var(--transition);
+    flex-shrink: 0;
+  }
+
+  .copy-btn:hover { color: var(--accent); background: var(--accent-dim); }
+  .eye-btn:hover { color: var(--accent); }
+
+  .strength-bar {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin: 8px 0;
+    overflow: hidden;
+  }
+
+  .strength-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: var(--transition);
+  }
+
+  .pw-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+  }
+
+  .action-btn:hover { color: var(--text); border-color: var(--border2); }
+  .action-btn.delete:hover { color: var(--red); border-color: rgba(248,113,113,0.3); background: var(--red-dim); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-title { font-size: 18px; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; }
+  .empty-sub { font-size: 14px; margin-bottom: 24px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition);
+  }
+
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: var(--transition);
+    box-shadow: 0 32px 64px rgba(0,0,0,0.6);
+  }
+
+  .modal-overlay.open .modal { transform: scale(1); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .modal-title { font-size: 20px; font-weight: 800; }
+
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: var(--transition);
+  }
+
+  .modal-close:hover { color: var(--text); }
+
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .pw-input-wrap { position: relative; }
+
+  .pw-input-wrap .form-input { padding-right: 80px; }
+
+  .pw-input-actions {
+    position: absolute;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    display: flex; gap: 6px;
+  }
+
+  .pw-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 3px 5px;
+    border-radius: 4px;
+    color: var(--text-muted);
+    transition: var(--transition);
+  }
+
+  .pw-action-btn:hover { color: var(--accent); background: var(--accent-dim); }
+
+  .strength-indicator { margin: 8px 0 16px; }
+  .strength-bar-wrap { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .strength-bar-fill { height: 100%; border-radius: 2px; transition: 0.3s ease; }
+  .strength-text { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .form-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: var(--transition);
+  }
+
+  .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+  .modal-footer { display: flex; gap: 10px; margin-top: 24px; }
+  .modal-footer .btn { flex: 1; }
+
+  .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: 0.3s cubic-bezier(0.16,1,0.3,1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(110,231,183,0.3); color: var(--accent); }
+  .toast.error { border-color: rgba(248,113,113,0.3); color: var(--red); }
+
+  @media (max-width: 768px) {
+    .app-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .main-content { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ AUTH SCREEN ══════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-icon">🔐</div>
+      <div class="brand-name">Rak<span>shan</span></div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <div id="auth-alert" class="alert"></div>
+
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="login-username" class="form-input" placeholder="your username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Master Password</label>
+        <input type="password" id="login-password" class="form-input" placeholder="••••••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()" style="margin-top:8px">Sign In →</button>
+    </div>
+
+    <div id="register-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="reg-username" class="form-input" placeholder="choose a username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Master Password</label>
+        <input type="password" id="reg-password" class="form-input" placeholder="min. 8 characters" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="reg-confirm" class="form-input" placeholder="repeat password" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()" style="margin-top:8px">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MAIN APP ══════════════════ -->
+<div id="app-screen">
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="icon">🔐</span>
+        <span class="name">Rak<span>shan</span></span>
+      </div>
+
+      <p class="sidebar-section-title">Categories</p>
+      <ul class="sidebar-nav" id="cat-nav">
+        <li><a class="active" onclick="filterCategory('')"><span class="nav-icon">🏠</span> All Passwords <span class="nav-count" id="cnt-all">0</span></a></li>
+        <li><a onclick="filterCategory('General')"><span class="nav-icon">📁</span> General <span class="nav-count" id="cnt-gen">0</span></a></li>
+        <li><a onclick="filterCategory('Social')"><span class="nav-icon">💬</span> Social <span class="nav-count" id="cnt-soc">0</span></a></li>
+        <li><a onclick="filterCategory('Finance')"><span class="nav-icon">💰</span> Finance <span class="nav-count" id="cnt-fin">0</span></a></li>
+        <li><a onclick="filterCategory('Work')"><span class="nav-icon">💼</span> Work <span class="nav-count" id="cnt-wor">0</span></a></li>
+        <li><a onclick="filterCategory('Shopping')"><span class="nav-icon">🛒</span> Shopping <span class="nav-count" id="cnt-sho">0</span></a></li>
+        <li><a onclick="filterCategory('Other')"><span class="nav-icon">📌</span> Other <span class="nav-count" id="cnt-oth">0</span></a></li>
+      </ul>
+
+      <div class="sidebar-bottom">
+        <div class="user-chip">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div>
+            <div class="user-name" id="sidebar-username">—</div>
+            <div class="user-label">Master Account</div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">↩ Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Password Vault</h1>
+          <p class="page-subtitle">Your encrypted, secure password collection</p>
+        </div>
+        <button class="add-btn" onclick="openAddModal()">+ Add Password</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Stored</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Strong Passwords</div>
+          <div class="stat-value green" id="stat-strong">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Weak Passwords</div>
+          <div class="stat-value red" id="stat-weak">0</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Search passwords…" id="search-input" oninput="doSearch()">
+        </div>
+        <select class="filter-select" id="filter-cat" onchange="doSearch()">
+          <option value="">All Categories</option>
+          <option value="General">General</option>
+          <option value="Social">Social</option>
+          <option value="Finance">Finance</option>
+          <option value="Work">Work</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <!-- Cards -->
+      <div class="pw-grid" id="pw-grid"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════════ ADD/EDIT MODAL ══════════════════ -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title">Add Password</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div id="modal-alert" class="alert"></div>
+
+    <input type="hidden" id="edit-id">
+
+    <div class="form-group">
+      <label class="form-label">Site / App Name *</label>
+      <input type="text" id="m-site" class="form-input" placeholder="e.g. GitHub">
+    </div>
+
+    <div class="input-row">
+      <div class="form-group">
+        <label class="form-label">URL</label>
+        <input type="text" id="m-url" class="form-input" placeholder="https://…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="m-cat" class="form-select">
+          <option value="General">General</option>
+          <option value="Social">Social</option>
+          <option value="Finance">Finance</option>
+          <option value="Work">Work</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Username / Email</label>
+      <input type="text" id="m-user" class="form-input" placeholder="user@example.com">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password *</label>
+      <div class="pw-input-wrap">
+        <input type="password" id="m-pw" class="form-input" placeholder="••••••••••••" oninput="updateStrength()">
+        <div class="pw-input-actions">
+          <button class="pw-action-btn" onclick="toggleModalPw()" title="Show/hide">👁</button>
+          <button class="pw-action-btn" onclick="generatePw()" title="Generate">⚡</button>
+        </div>
+      </div>
+      <div class="strength-indicator">
+        <div class="strength-bar-wrap"><div class="strength-bar-fill" id="m-strength-bar"></div></div>
+        <span class="strength-text" id="m-strength-text" style="color:var(--text-muted)">Enter a password</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea id="m-notes" class="form-textarea" placeholder="Optional notes…"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="savePassword()">Save Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+let allPasswords = [];
+let currentCategory = '';
+let showPwIds = new Set();
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+async function api(path, opts={}) {
+  const r = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    ...opts,
+  });
+  return r.json();
+}
+
+function strengthInfo(s) {
+  const map = [
+    { color: '#ef4444', label: 'Very Weak', pct: '15%' },
+    { color: '#f97316', label: 'Weak',      pct: '30%' },
+    { color: '#eab308', label: 'Fair',      pct: '55%' },
+    { color: '#84cc16', label: 'Good',      pct: '75%' },
+    { color: '#22c55e', label: 'Strong',    pct: '90%' },
+    { color: '#10b981', label: 'Very Strong', pct: '100%' },
+  ];
+  return map[Math.min(s, 5)];
+}
+
+function siteIcon(name) {
+  return (name || '?').charAt(0).toUpperCase();
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('login-form').style.display   = tab==='login'    ? '' : 'none';
+  document.getElementById('register-form').style.display = tab==='register' ? '' : 'none';
+  document.getElementById('auth-alert').style.display = 'none';
+}
+
+function showAuthAlert(msg, type='error') {
+  const el = document.getElementById('auth-alert');
+  el.textContent = msg;
+  el.className = `alert alert-${type}`;
+  el.style.display = 'block';
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const res = await api('/api/login', { method:'POST', body: JSON.stringify({username, password}) });
+  if (res.error) { showAuthAlert(res.error); return; }
+  enterApp(username);
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm  = document.getElementById('reg-confirm').value;
+  if (password !== confirm) { showAuthAlert('Passwords do not match'); return; }
+  const res = await api('/api/register', { method:'POST', body: JSON.stringify({username, password}) });
+  if (res.error) { showAuthAlert(res.error); return; }
+  showAuthAlert('Account created! Please sign in.', 'success');
+  switchTab('login');
+}
+
+async function doLogout() {
+  await api('/api/logout', { method:'POST' });
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+function enterApp(username) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = '';
+  document.getElementById('sidebar-username').textContent = username;
+  document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
+  loadAll();
+}
+
+async function checkSession() {
+  const res = await api('/api/me');
+  if (res.username) enterApp(res.username);
+}
+
+// ── Passwords ─────────────────────────────────────────────────────────────────
+
+async function loadAll() {
+  const [pws, stats] = await Promise.all([api('/api/passwords'), api('/api/stats')]);
+  allPasswords = Array.isArray(pws) ? pws : [];
+  renderCards(allPasswords);
+  updateStats(stats);
+  updateCounts(stats);
+}
+
+function updateStats(s) {
+  document.getElementById('stat-total').textContent  = s.total  || 0;
+  document.getElementById('stat-strong').textContent = s.strong || 0;
+  document.getElementById('stat-weak').textContent   = s.weak   || 0;
+}
+
+function updateCounts(s) {
+  document.getElementById('cnt-all').textContent = s.total || 0;
+  const cats = s.categories || {};
+  document.getElementById('cnt-gen').textContent = cats['General']  || 0;
+  document.getElementById('cnt-soc').textContent = cats['Social']   || 0;
+  document.getElementById('cnt-fin').textContent = cats['Finance']  || 0;
+  document.getElementById('cnt-wor').textContent = cats['Work']     || 0;
+  document.getElementById('cnt-sho').textContent = cats['Shopping'] || 0;
+  document.getElementById('cnt-oth').textContent = cats['Other']    || 0;
+}
+
+function filterCategory(cat) {
+  currentCategory = cat;
+  document.getElementById('filter-cat').value = cat;
+  document.querySelectorAll('#cat-nav a').forEach(a => a.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  doSearch();
+}
+
+function doSearch() {
+  const q   = document.getElementById('search-input').value.toLowerCase();
+  const cat = document.getElementById('filter-cat').value;
+  const filtered = allPasswords.filter(p => {
+    const matchCat  = !cat || p.category === cat;
+    const matchQ    = !q  || p.site_name.toLowerCase().includes(q) || (p.username||'').toLowerCase().includes(q) || (p.site_url||'').toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  renderCards(filtered);
+}
+
+function renderCards(list) {
+  const grid = document.getElementById('pw-grid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">🔒</div>
+      <div class="empty-title">No passwords found</div>
+      <div class="empty-sub">Add your first password to get started</div>
+      <button class="add-btn" onclick="openAddModal()">+ Add Password</button>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(p => {
+    const si = strengthInfo(p.strength);
+    const revealed = showPwIds.has(p.id);
+    return `<div class="pw-card" id="card-${p.id}">
+      <div class="pw-card-header">
+        <div style="display:flex;align-items:center;flex:1;min-width:0">
+          <div class="pw-site-icon">${siteIcon(p.site_name)}</div>
+          <div class="pw-site-info">
+            <div class="pw-site-name">${esc(p.site_name)}</div>
+            <div class="pw-site-url">${esc(p.site_url || '')}</div>
+          </div>
+        </div>
+        <span class="pw-category-badge">${esc(p.category)}</span>
+      </div>
+
+      <div class="pw-fields">
+        <div class="pw-field">
+          <span class="pw-field-label">User</span>
+          <span class="pw-field-value">${esc(p.username || '—')}</span>
+          <button class="copy-btn" onclick="copyText('${esc(p.username||'')}','Username')">📋</button>
+        </div>
+        <div class="pw-field">
+          <span class="pw-field-label">Pass</span>
+          <span class="pw-field-value pw-password-value ${revealed?'revealed':''}" id="pw-${p.id}">${esc(p.password)}</span>
+          <button class="eye-btn" onclick="toggleReveal(${p.id})" id="eye-${p.id}">${revealed?'🙈':'👁'}</button>
+          <button class="copy-btn" onclick="copyText('${esc(p.password)}','Password')">📋</button>
+        </div>
+      </div>
+
+      <div class="strength-bar">
+        <div class="strength-fill" style="width:${si.pct};background:${si.color}"></div>
+      </div>
+
+      <div class="pw-actions">
+        <button class="action-btn" onclick="openEditModal(${p.id})">✏ Edit</button>
+        <button class="action-btn delete" onclick="deletePassword(${p.id},'${esc(p.site_name)}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function toggleReveal(id) {
+  if (showPwIds.has(id)) showPwIds.delete(id); else showPwIds.add(id);
+  const el  = document.getElementById(`pw-${id}`);
+  const eye = document.getElementById(`eye-${id}`);
+  if (el) { el.classList.toggle('revealed', showPwIds.has(id)); }
+  if (eye) { eye.textContent = showPwIds.has(id) ? '🙈' : '👁'; }
+}
+
+async function copyText(text, label) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(`${label} copied!`);
+  } catch { toast('Copy failed', 'error'); }
+}
+
+async function deletePassword(id, name) {
+  if (!confirm(`Delete password for "${name}"?`)) return;
+  const res = await api(`/api/passwords/${id}`, { method:'DELETE' });
+  if (res.error) { toast(res.error, 'error'); return; }
+  allPasswords = allPasswords.filter(p => p.id !== id);
+  toast('Password deleted');
+  doSearch();
+  const stats = await api('/api/stats');
+  updateStats(stats); updateCounts(stats);
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Add Password';
+  document.getElementById('modal-save-btn').textContent = 'Save Password';
+  document.getElementById('edit-id').value = '';
+  clearModal();
+  openModal();
+}
+
+function openEditModal(id) {
+  const p = allPasswords.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modal-title').textContent = 'Edit Password';
+  document.getElementById('modal-save-btn').textContent = 'Update Password';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('m-site').value  = p.site_name;
+  document.getElementById('m-url').value   = p.site_url   || '';
+  document.getElementById('m-cat').value   = p.category   || 'General';
+  document.getElementById('m-user').value  = p.username   || '';
+  document.getElementById('m-pw').value    = p.password;
+  document.getElementById('m-notes').value = p.notes      || '';
+  updateStrength();
+  openModal();
+}
+
+function clearModal() {
+  ['m-site','m-url','m-user','m-pw','m-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-cat').value = 'General';
+  document.getElementById('m-strength-bar').style.width = '';
+  document.getElementById('m-strength-text').textContent = 'Enter a password';
+  document.getElementById('m-strength-text').style.color = 'var(--text-muted)';
+  document.getElementById('modal-alert').style.display = 'none';
+}
+
+function openModal()  { document.getElementById('pw-modal').classList.add('open'); }
+function closeModal() { document.getElementById('pw-modal').classList.remove('open'); }
+
+function toggleModalPw() {
+  const inp = document.getElementById('m-pw');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function generatePw() {
+  const res = await api('/api/generate?length=20');
+  document.getElementById('m-pw').value = res.password;
+  document.getElementById('m-pw').type = 'text';
+  updateStrength();
+  toast('Password generated!');
+}
+
+function updateStrength() {
+  const pw = document.getElementById('m-pw').value;
+  if (!pw) {
+    document.getElementById('m-strength-bar').style.width = '0';
+    document.getElementById('m-strength-text').textContent = 'Enter a password';
+    document.getElementById('m-strength-text').style.color = 'var(--text-muted)';
+    return;
+  }
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 16) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw))    score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  score = Math.min(score, 5);
+  const si = strengthInfo(score);
+  document.getElementById('m-strength-bar').style.cssText = `width:${si.pct};background:${si.color}`;
+  document.getElementById('m-strength-text').textContent = si.label;
+  document.getElementById('m-strength-text').style.color = si.color;
+}
+
+function showModalAlert(msg, type='error') {
+  const el = document.getElementById('modal-alert');
+  el.textContent = msg;
+  el.className = `alert alert-${type}`;
+  el.style.display = 'block';
+}
+
+async function savePassword() {
+  const id   = document.getElementById('edit-id').value;
+  const body = {
+    site_name: document.getElementById('m-site').value.trim(),
+    site_url:  document.getElementById('m-url').value.trim(),
+    category:  document.getElementById('m-cat').value,
+    username:  document.getElementById('m-user').value.trim(),
+    password:  document.getElementById('m-pw').value,
+    notes:     document.getElementById('m-notes').value.trim(),
+  };
+
+  if (!body.site_name) { showModalAlert('Site name is required'); return; }
+  if (!body.password)  { showModalAlert('Password is required');  return; }
+
+  const res = id
+    ? await api(`/api/passwords/${id}`, { method:'PUT',  body: JSON.stringify(body) })
+    : await api('/api/passwords',        { method:'POST', body: JSON.stringify(body) });
+
+  if (res.error) { showModalAlert(res.error); return; }
+
+  toast(id ? 'Password updated!' : 'Password saved!');
+  closeModal();
+  await loadAll();
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('auth-screen').style.display !== 'none') {
+    if (document.getElementById('login-form').style.display !== 'none') doLogin();
+    else doRegister();
+  }
+});
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+checkSession();
+</script>
+</body>
+</html>
